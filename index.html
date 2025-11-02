@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Premiumkejas — We do the house hunting for you.</title>
+  <meta name="description" content="Premiumkejas connects tenants with premium rentals in Thika. We do the house hunting for you — safely, quickly, and transparently." />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --ink: #0a0a0a;        /* black */
+      --paper: #ffffff;      /* white */
+      --muted: #6b7280;      /* gray-500 */
+      --line: #e5e7eb;       /* gray-200 */
+    }
+
+    html, body { height: 100%; background: var(--paper); color: var(--ink); }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+
+    /* === Preloader === */
+    #preloader { position: fixed; inset: 0; background: var(--paper); display: grid; place-items: center; z-index: 9999; }
+    .spinner { width: 64px; height: 64px; border-radius: 9999px; border: 3px solid #e5e7eb; border-top-color: var(--ink); animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .brand-pulse { animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 0.4 } 50% { opacity: 1 } }
+
+    /* === Drawer === */
+    .drawer { transform: translateX(-100%); transition: transform .35s ease; }
+    .drawer.open { transform: translateX(0); }
+
+    /* === Hero background slider === */
+    .hero-bg { background-size: cover; background-position: center; }
+    .hero-overlay { background: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,.35), rgba(0,0,0,.2)); }
+
+    /* Hide scrollbars on overlay when locked */
+    .scroll-lock { overflow: hidden; }
+
+    /* Simple focus ring for a11y on dark over image */
+    .focus-ring:focus { outline: 2px solid #000; outline-offset: 2px; }
+  </style>
+</head>
+<body class="antialiased selection:bg-black selection:text-white">
+  <!-- ===================== PRELOADER ===================== -->
+  <div id="preloader" role="status" aria-live="polite">
+    <div class="flex flex-col items-center gap-4">
+      <div class="spinner brand-pulse"></div>
+      <div class="text-sm text-gray-500 tracking-wide">Loading Premiumkejas…</div>
+    </div>
+  </div>
+
+  <!-- ===================== MOBILE DRAWER ===================== -->
+  <aside id="leftDrawer" class="drawer fixed top-0 left-0 h-full w-80 bg-white border-r border-gray-200 z-[60] shadow-xl">
+    <div class="p-4 flex items-center justify-between border-b border-gray-200">
+      <div class="font-semibold tracking-wide">Navigation</div>
+      <button id="drawerClose" class="p-2 focus-ring" aria-label="Close menu">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <nav class="p-4 space-y-1">
+      <a class="block px-3 py-2 rounded hover:bg-gray-100" href="#home">Home</a>
+      <a class="block px-3 py-2 rounded hover:bg-gray-100" href="#about">About</a>
+      <a class="block px-3 py-2 rounded hover:bg-gray-100" href="#partners">Partners</a>
+      <a class="block px-3 py-2 rounded hover:bg-gray-100" href="#contact">Contact</a>
+      <div class="pt-3 mt-3 border-t border-gray-200 text-xs text-gray-500">Account</div>
+      <button class="w-full text-left px-3 py-2 rounded hover:bg-gray-100" data-open="authModal">Login / Sign up</button>
+      <button class="w-full text-left px-3 py-2 rounded hover:bg-gray-100" data-open="searchModal">Search Homes</button>
+    </nav>
+  </aside>
+  <div id="drawerBackdrop" class="hidden fixed inset-0 bg-black/30 z-[50]"></div>
+
+  <!-- ===================== TOP NAV ===================== -->
+  <header id="home" class="fixed top-0 inset-x-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="h-16 flex items-center justify-between">
+        <!-- Brand -->
+        <a href="#home" class="flex items-center gap-2 font-bold tracking-wide">
+          <span class="inline-flex h-8 w-8 border border-gray-900 rounded-full items-center justify-center">TK</span>
+          <span class="hidden sm:block">Premiumkejas</span>
+        </a>
+
+        <!-- Right controls -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <button data-open="searchModal" class="p-2 rounded hover:bg-gray-100 focus-ring" aria-label="Search">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-6 w-6" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"/></svg>
+          </button>
+          <button data-open="authModal" class="px-3 py-1.5 border border-black rounded-full text-sm hover:bg-black hover:text-white focus-ring" aria-haspopup="dialog">Login / Sign up</button>
+          <button id="hamburger" class="p-2 rounded hover:bg-gray-100 focus-ring" aria-label="Open menu" aria-controls="leftDrawer" aria-expanded="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-6 w-6" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== HERO ===================== -->
+  <section class="relative hero-bg min-h-[82vh] flex items-center" id="hero">
+    <!-- overlay -->
+    <div class="absolute inset-0 hero-overlay"></div>
+    <!-- content -->
+    <div class="relative z-10 w-full pt-24">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="max-w-2xl text-white">
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight">Premiumkejas</h1>
+          <p class="mt-4 text-lg sm:text-xl opacity-90">“We do the house hunting for you.”</p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <button data-open="searchModal" class="px-5 py-2.5 rounded-full bg-white text-black text-sm font-medium hover:bg-gray-100 focus-ring">Search Homes</button>
+            <button data-open="authModal" class="px-5 py-2.5 rounded-full border border-white/80 text-white text-sm font-medium hover:bg-white hover:text-black focus-ring">List a Property</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ABOUT ===================== -->
+  <section id="about" class="py-16 sm:py-20 border-t border-gray-200 bg-white">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-10 items-start">
+      <div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">About Premiumkejas</h2>
+        <p class="mt-4 text-gray-600 leading-7">
+          We make moving simple, safe, and fast. Explore verified premium rentals across Thika with rich photos, transparent details, and an escrow‑style payment flow that protects tenants and landlords alike. Landlords list in minutes; tenants find homes without the hustle.
+        </p>
+        <ul class="mt-6 space-y-2 text-gray-700">
+          <li class="flex gap-3"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-black"></span><span>Premium listings with modern standards.</span></li>
+          <li class="flex gap-3"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-black"></span><span>Search by location, price, type, and amenities.</span></li>
+          <li class="flex gap-3"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-black"></span><span>Google Maps view & directions (coming soon).</span></li>
+          <li class="flex gap-3"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-black"></span><span>In‑app messaging + WhatsApp CTAs (coming soon).</span></li>
+        </ul>
+      </div>
+      <div class="border border-gray-200 rounded-2xl p-6">
+        <div class="grid sm:grid-cols-3 gap-4 text-center">
+          <div class="p-4 border border-gray-200 rounded-xl">
+            <div class="text-3xl font-black">0%</div>
+            <div class="text-xs uppercase tracking-wide text-gray-500">Color noise</div>
+          </div>
+          <div class="p-4 border border-gray-200 rounded-xl">
+            <div class="text-3xl font-black">100%</div>
+            <div class="text-xs uppercase tracking-wide text-gray-500">Focus on clarity</div>
+          </div>
+          <div class="p-4 border border-gray-200 rounded-xl">
+            <div class="text-3xl font-black">24/7</div>
+            <div class="text-xs uppercase tracking-wide text-gray-500">Self‑serve access</div>
+          </div>
+        </div>
+        <p class="mt-6 text-sm text-gray-600">Built for Thika’s next decade — a safer, cleaner, more modern rental market.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PARTNERS ===================== -->
+  <section id="partners" class="py-14 sm:py-16 border-t border-gray-200 bg-white">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <h3 class="text-center text-sm tracking-widest uppercase text-gray-500">Partners</h3>
+      <div class="mt-6 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6 items-center">
+        <div class="h-12 grayscale opacity-70 flex items-center justify-center border border-gray-200 rounded-lg">Logo</div>
+        <div class="h-12 grayscale opacity-70 flex items-center justify-center border border-gray-200 rounded-lg">Logo</div>
+        <div class="h-12 grayscale opacity-70 flex items-center justify-center border border-gray-200 rounded-lg">Logo</div>
+        <div class="h-12 grayscale opacity-70 flex items-center justify-center border border-gray-200 rounded-lg">Logo</div>
+        <div class="h-12 grayscale opacity-70 flex items-center justify-center border border-gray-200 rounded-lg">Logo</div>
+        <div class="h-12 grayscale opacity-70 flex items-center justify-center border border-gray-200 rounded-lg">Logo</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer id="contact" class="border-t border-gray-200 bg-white">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div>
+        <div class="font-bold tracking-wide">Premiumkejas</div>
+        <p class="mt-2 text-sm text-gray-600">We do the house hunting for you.</p>
+      </div>
+      <div>
+        <div class="text-sm font-semibold">Company</div>
+        <ul class="mt-2 text-sm text-gray-600 space-y-1">
+          <li><a href="#about" class="hover:underline">About</a></li>
+          <li><a href="#partners" class="hover:underline">Partners</a></li>
+          <li><a href="#" class="hover:underline">Careers</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="text-sm font-semibold">Product</div>
+        <ul class="mt-2 text-sm text-gray-600 space-y-1">
+          <li><a href="#" class="hover:underline">Browse Homes</a></li>
+          <li><a href="#" class="hover:underline">For Landlords</a></li>
+          <li><a href="#" class="hover:underline">Pricing</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="text-sm font-semibold">Contact</div>
+        <ul class="mt-2 text-sm text-gray-600 space-y-1">
+          <li><a href="mailto:support@Premiumkejas.com" class="hover:underline">support@Premiumkejas.com</a></li>
+          <li><a href="#" class="hover:underline">WhatsApp</a></li>
+          <li><a href="#" class="hover:underline">Twitter / X</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="border-t border-gray-200 py-6 text-center text-xs text-gray-500">© <span id="year"></span> Premiumkejas. All rights reserved.</div>
+  </footer>
+
+  <!-- ===================== SEARCH MODAL ===================== -->
+  <div id="searchModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative mx-auto mt-28 w-[92%] max-w-2xl bg-white rounded-2xl shadow-2xl border border-gray-200">
+      <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div class="font-semibold">Search Homes</div>
+        <button class="p-2 hover:bg-gray-100 rounded" data-close aria-label="Close search">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form class="p-4 grid gap-3" onsubmit="event.preventDefault(); alert('Search submitted (MVP stub).');">
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Location</label>
+            <input class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g., Ngoingwa, Makongeni, Thika Town" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Type</label>
+            <select class="w-full border border-gray-300 rounded-lg px-3 py-2">
+              <option>Any</option>
+              <option>Bedsitter</option>
+              <option>1 Bedroom</option>
+              <option>2 Bedroom</option>
+              <option>3+ Bedroom</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Price (Min)</label>
+            <input type="number" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g., 12000" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Price (Max)</label>
+            <input type="number" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g., 40000" />
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" class="px-4 py-2 rounded-lg border border-gray-300" data-close>Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-black text-white">Search</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== AUTH MODAL (LANDLORD/TENANT) ===================== -->
+  <div id="authModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative mx-auto mt-20 w-[92%] max-w-xl bg-white rounded-2xl shadow-2xl border border-gray-200">
+      <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div class="font-semibold">Welcome to Premiumkejas</div>
+        <button class="p-2 hover:bg-gray-100 rounded" data-close aria-label="Close auth">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="px-4 pt-4">
+        <div class="inline-flex rounded-full border border-gray-300 p-1 text-sm">
+          <button class="tab-btn px-4 py-1.5 rounded-full bg-black text-white" data-tab="tenant">Tenant</button>
+          <button class="tab-btn px-4 py-1.5 rounded-full" data-tab="landlord">Landlord</button>
+        </div>
+      </div>
+
+      <!-- Tenant form -->
+      <form id="tenantForm" class="p-4 grid gap-3" onsubmit="event.preventDefault(); alert('Tenant login/signup (MVP stub).');">
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Email</label>
+            <input required type="email" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Password</label>
+            <input required type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="••••••••" />
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-1">
+          <button type="button" class="px-4 py-2 rounded-lg border border-gray-300" data-close>Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-black text-white">Continue</button>
+        </div>
+      </form>
+
+      <!-- Landlord form -->
+      <form id="landlordForm" class="p-4 grid gap-3 hidden" onsubmit="event.preventDefault(); alert('Landlord login/signup (MVP stub).');">
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Business/Name</label>
+            <input required class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Your name or agency" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Email</label>
+            <input required type="email" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="you@agency.co" />
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Password</label>
+            <input required type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="••••••••" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Phone (WhatsApp)</label>
+            <input class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="+2547…" />
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-1">
+          <button type="button" class="px-4 py-2 rounded-lg border border-gray-300" data-close>Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-black text-white">Continue</button>
+        </div>
+      </form>
+
+      <div class="px-4 pb-5 text-xs text-gray-500">By continuing you agree to our Terms & Privacy Policy.</div>
+    </div>
+  </div>
+
+  <!-- ===================== SCRIPTS ===================== -->
+  <script>
+    // ===== Preloader =====
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const pre = document.getElementById('preloader');
+        pre?.classList.add('opacity-0');
+        pre?.classList.add('pointer-events-none');
+        setTimeout(() => pre?.remove(), 300);
+      }, 400); // tiny delay for nicer feel
+    });
+
+    // ===== Drawer =====
+    const drawer = document.getElementById('leftDrawer');
+    const drawerBackdrop = document.getElementById('drawerBackdrop');
+    const hamburger = document.getElementById('hamburger');
+    const drawerClose = document.getElementById('drawerClose');
+
+    function openDrawer() {
+      drawer.classList.add('open');
+      drawerBackdrop.classList.remove('hidden');
+      document.body.classList.add('scroll-lock');
+      hamburger.setAttribute('aria-expanded', 'true');
+    }
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      drawerBackdrop.classList.add('hidden');
+      document.body.classList.remove('scroll-lock');
+      hamburger.setAttribute('aria-expanded', 'false');
+    }
+    hamburger?.addEventListener('click', openDrawer);
+    drawerClose?.addEventListener('click', closeDrawer);
+    drawerBackdrop?.addEventListener('click', closeDrawer);
+
+    // ===== Modals (Search & Auth) =====
+    const openBtns = document.querySelectorAll('[data-open]');
+    const closeBtns = document.querySelectorAll('[data-close]');
+
+    openBtns.forEach(btn => btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-open');
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('hidden');
+      document.body.classList.add('scroll-lock');
+    }));
+
+    closeBtns.forEach(btn => btn.addEventListener('click', (e) => {
+      const modal = btn.closest('[role="dialog"]');
+      modal?.classList.add('hidden');
+      document.body.classList.remove('scroll-lock');
+    }));
+
+    // Close modal on shaded backdrop click
+    document.querySelectorAll('#searchModal, #authModal').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.add('hidden');
+          document.body.classList.remove('scroll-lock');
+        }
+      });
+    });
+
+    // ===== Auth tabs =====
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tenantForm = document.getElementById('tenantForm');
+    const landlordForm = document.getElementById('landlordForm');
+
+    tabButtons.forEach(btn => btn.addEventListener('click', () => {
+      tabButtons.forEach(b => b.classList.remove('bg-black', 'text-white'));
+      btn.classList.add('bg-black', 'text-white');
+      const tab = btn.getAttribute('data-tab');
+      if (tab === 'tenant') {
+        tenantForm.classList.remove('hidden');
+        landlordForm.classList.add('hidden');
+      } else {
+        landlordForm.classList.remove('hidden');
+        tenantForm.classList.add('hidden');
+      }
+    }));
+
+    // ===== Year in footer =====
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // ===== Hero background slider (3 photos) =====
+    const hero = document.getElementById('hero');
+    const images = [
+      // Replace these URLs with your real property/Thika photos (hosted or local)
+      'https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1400&auto=format&fit=crop', // interior
+      'https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=1400&auto=format&fit=crop', // building facade
+      'https://images.unsplash.com/photo-1502005097973-6a7082348e28?q=80&w=1400&auto=format&fit=crop'  // living room
+    ];
+    let idx = 0;
+    function setHero(i) {
+      hero.style.backgroundImage = `url('${images[i]}')`;
+    }
+    setHero(idx);
+    setInterval(() => { idx = (idx + 1) % images.length; setHero(idx); }, 5000);
+
+    // ===== TODO: Backend integration stubs =====
+    // - /api/auth (POST /login, POST /signup, GET /me)
+    // - /api/listings (CRUD for landlords; GET for tenants)
+    // - /api/payments (escrow-like flow)
+    // - /api/search (query by location/type/price/amenities)
+  </script>
+</body>
+</html>
